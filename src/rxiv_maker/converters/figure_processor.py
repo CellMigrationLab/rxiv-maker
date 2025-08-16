@@ -203,6 +203,11 @@ def create_latex_figure_environment(
         or width == "\\textwidth"  # Auto-detect full-width figures regardless of position
     )
 
+    if position == "p":
+        # Dedicated page figures should use standard figure environment
+        # even when width is set to \textwidth
+        is_twocolumn = False
+
     # Only adjust positioning for two-column spanning figures that don't have explicit positioning
     if is_twocolumn and position == "ht":
         # For two-column spanning figures with default positioning, use 'tp' for better placement

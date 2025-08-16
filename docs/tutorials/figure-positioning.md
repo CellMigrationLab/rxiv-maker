@@ -55,7 +55,7 @@ For figures that should span both columns in a two-column layout:
 {#fig:workflow width="\textwidth" tex_position="t"}
 ```
 
-**Note:** `width="\textwidth"` automatically creates a `figure*` environment for two-column spanning.
+**Note:** `width="\textwidth"` automatically creates a `figure*` environment for two-column spanning, except when `tex_position="p"` which keeps a standard `figure` on its own page.
 
 ## Panel References
 
@@ -93,11 +93,10 @@ As shown in @fig:results A, the data indicates...
 {#fig:schematic tex_position="p" width="\textwidth"}
 ```
 
-When `width="\textwidth"` is used with `tex_position="p"`, Rxiv-Maker creates a
-`figure*` environment to span the full page width, preventing captions from
-overflowing in two-column layouts. If the figure floats too far from the
-reference point, insert `<clearpage>` or `<float-barrier>` before the figure to
-force placement.
+When `width="\textwidth"` is used with `tex_position="p"`, Rxiv-Maker uses a
+standard `figure[p]` environment so the figure occupies a dedicated page. If
+the figure floats too far from the reference point, insert `<clearpage>` or
+`<float-barrier>` before the figure to force placement.
 
 ## Figure File Organization
 
