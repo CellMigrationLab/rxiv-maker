@@ -152,15 +152,23 @@ def create_latex_figure_environment(
 
     # Handle new subdirectory structure: Figure__name.svg -> Figure__name/Figure__name.png
     if "/" not in latex_path.split("Figures/")[-1]:  # Only if not already in subdirectory
-        # Extract figure name from path like "Figures/Figure__name.svg"
         import os
+        from pathlib import Path
 
+        # Extract figure name from path like "Figures/Figure__name.svg"
         figure_name = os.path.splitext(os.path.basename(latex_path))[0]
         figure_ext = os.path.splitext(latex_path)[1]
 
         # Check if figure already exists as ready file (direct in Figures/ directory)
-        ready_figure_path = latex_path
-        if os.path.exists(ready_figure_path.replace("Figures/", "FIGURES/")):
+        ready_figure_path = latex_path.replace("Figures/", "FIGURES/")
+
+        # Resolve against manuscript path when available to avoid false negatives
+        manuscript_root = os.getenv("MANUSCRIPT_PATH")
+        ready_figure_fullpath = (
+            Path(manuscript_root) / ready_figure_path if manuscript_root else Path(ready_figure_path)
+        )
+
+        if ready_figure_fullpath.exists():
             # Ready figure exists, use it directly without subdirectory conversion
             # latex_path already contains the correct ready file path
             pass
@@ -192,7 +200,7 @@ def create_latex_figure_environment(
         attributes.get("span") == "2col"
         or attributes.get("twocolumn") == "true"
         or attributes.get("twocolumn") is True
-        or (width == "\\textwidth" and position != "p")  # Auto-detect, but not for dedicated page figures
+        or width == "\\textwidth"  # Auto-detect full-width figures regardless of position
     )
 
     # Only adjust positioning for two-column spanning figures that don't have explicit positioning

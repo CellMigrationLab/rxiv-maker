@@ -93,6 +93,12 @@ As shown in @fig:results A, the data indicates...
 {#fig:schematic tex_position="p" width="\textwidth"}
 ```
 
+When `width="\textwidth"` is used with `tex_position="p"`, Rxiv-Maker creates a
+`figure*` environment to span the full page width, preventing captions from
+overflowing in two-column layouts. If the figure floats too far from the
+reference point, insert `<clearpage>` or `<float-barrier>` before the figure to
+force placement.
+
 ## Figure File Organization
 
 ### Ready Figures (Recommended)
@@ -120,6 +126,8 @@ FIGURES/
 ### Figure Appears on Wrong Page
 - Try `tex_position="!t"` to force top placement
 - For large figures, use `tex_position="p"` for dedicated page
+- Insert `<clearpage>` or `<float-barrier>` before the figure to keep it near
+  the reference point when using `tex_position="p"`
 
 ### Figure Too Large
 - Reduce `width` parameter: `width="0.7\linewidth"`
