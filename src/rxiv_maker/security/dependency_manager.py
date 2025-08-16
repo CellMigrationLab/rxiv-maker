@@ -18,6 +18,12 @@ import requests
 
 from ..utils.advanced_cache import AdvancedCache
 
+try:
+    from ..utils.retry import get_with_retry
+except ImportError:
+    # Fallback when retry module isn't available
+    get_with_retry = None  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 
@@ -156,7 +162,7 @@ class DependencyManager:
         Returns:
             Impact assessment results
         """
-        impact_assessment = {
+        impact_assessment: Dict[str, Any] = {
             "package": package_name,
             "target_version": target_version,
             "breaking_changes": [],
@@ -309,10 +315,10 @@ class DependencyManager:
         dependencies = {}
 
         try:
-            import tomli
+            import tomllib
 
             with open(self.pyproject_file, "rb") as f:
-                data = tomli.load(f)
+                data = tomllib.load(f)
 
             # Main dependencies
             project_deps = data.get("project", {}).get("dependencies", [])
@@ -403,8 +409,12 @@ class DependencyManager:
             normalized_name = package_name.lower().replace("_", "-")
             url = f"{self.pypi_api_base}/{normalized_name}/json"
 
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
+            # Use retry logic for network requests
+            if get_with_retry is not None:
+                response = get_with_retry(url, max_attempts=3, timeout=10)
+            else:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
 
             package_info = response.json()
 
@@ -429,8 +439,12 @@ class DependencyManager:
             normalized_name = package_name.lower().replace("_", "-")
             url = f"{self.pypi_api_base}/{normalized_name}/{version}/json"
 
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
+            # Use retry logic for network requests
+            if get_with_retry is not None:
+                response = get_with_retry(url, max_attempts=3, timeout=10)
+            else:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
 
             version_info = response.json()
 
@@ -467,7 +481,9 @@ class DependencyManager:
         except ImportError:
             # Fallback to simple string comparison
             return version1 != version2
-        except Exception:
+        except Exception as e:
+            # Log version comparison failure for debugging
+            logger.debug(f"Failed to compare versions {version1} and {version2}: {e}")
             return False
 
     def _classify_update_type(self, current_version: str, latest_version: str) -> str:
@@ -502,7 +518,9 @@ class DependencyManager:
                         return "patch"
 
             return "unknown"
-        except Exception:
+        except Exception as e:
+            # Log version classification failure for debugging
+            logger.debug(f"Failed to classify update type for {current_version} -> {latest_version}: {e}")
             return "unknown"
 
     def _check_security_update(
@@ -566,7 +584,7 @@ class DependencyManager:
 
     def _check_dependency_conflicts(self, package_name: str, target_version: str) -> List[str]:
         """Check for potential dependency conflicts."""
-        conflicts = []
+        conflicts: List[str] = []
 
         try:
             # Get dependencies of target version

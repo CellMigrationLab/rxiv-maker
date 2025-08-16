@@ -8,8 +8,11 @@ capabilities to extract information and create well-formatted markdown files.
 
 import importlib.util
 import inspect
+import logging
 import os
 import sys
+
+logger = logging.getLogger(__name__)
 
 
 def generate_markdown_doc(module_name, module, output_dir):
@@ -51,8 +54,8 @@ def generate_markdown_doc(module_name, module, output_dir):
                         try:
                             signature = inspect.signature(method)
                             doc += f"```python\n{method_name}{signature}\n```\n\n"
-                        except ValueError:
-                            pass
+                        except ValueError as e:
+                            logger.debug(f"Cannot get signature for method {method_name}: {e}")
 
     # Document functions
     functions = [
@@ -70,8 +73,8 @@ def generate_markdown_doc(module_name, module, output_dir):
                 try:
                     signature = inspect.signature(func)
                     doc += f"```python\n{name}{signature}\n```\n\n"
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    logger.debug(f"Cannot get signature for function {name}: {e}")
 
     # Write to file
     os.makedirs(output_dir, exist_ok=True)
@@ -114,7 +117,8 @@ def process_directory(dir_path, output_dir, base_package=""):
                     module = importlib.util.module_from_spec(spec)
                     # Add to sys.modules to help with relative imports
                     sys.modules[f"rxiv_maker.{full_module_name}"] = module
-                    spec.loader.exec_module(module)
+                    if spec.loader is not None:
+                        spec.loader.exec_module(module)
                     print(f"Generated documentation for rxiv_maker.{full_module_name} (fallback)")
 
                 # Generate documentation with clean module name

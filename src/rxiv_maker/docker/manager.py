@@ -4,6 +4,8 @@ This module provides efficient Docker container management with session reuse,
 volume caching, and optimized command construction for all Rxiv-Maker operations.
 """
 
+import contextlib
+import logging
 import os
 import platform
 import subprocess
@@ -258,8 +260,8 @@ class DockerManager:
                 else:
                     # Cleanup failed session
                     session.cleanup()
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
-            pass
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+            logging.debug(f"Session cleanup encountered expected error during container termination: {e}")
 
         return None
 
@@ -548,10 +550,34 @@ if __name__ == "__main__":
     sys.exit(generate_mermaid_svg())
 '''
 
-        # Execute the Python-based Mermaid generation
-        cmd_parts = ["python3", "-c", python_script]
+        # Execute the Python-based Mermaid generation using a safer approach
+        # Write script to temp file first, then execute to avoid shell argument parsing issues
+        script_cmd = f"""
+import tempfile
+import os
+import subprocess
+import sys
 
-        return self.run_command(command=cmd_parts, session_key="mermaid_generation")
+# Write the script to a temporary file
+script_content = {repr(python_script)}
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+    f.write(script_content)
+    temp_script = f.name
+
+try:
+    # Execute the script
+    result = subprocess.run(["/usr/bin/python3", temp_script], capture_output=True, text=True)
+    print(result.stdout)
+    if result.stderr:
+        print(result.stderr, file=sys.stderr)
+    sys.exit(result.returncode)
+finally:
+    # Clean up
+    os.unlink(temp_script)
+"""
+
+        return self.run_command(command=["python3", "-c", script_cmd], session_key="mermaid_generation")
 
     def run_python_script(
         self,
@@ -567,7 +593,9 @@ if __name__ == "__main__":
             # Check if it's accessible through a mounted volume at /workspace
             # Try to find the script in the workspace
             # Use the script name but with a fallback to copy/read approach
-            pass
+            logging.debug(
+                f"Script {script_file} is outside workspace {self.workspace_dir}, will handle during execution"
+            )
 
         docker_working_dir = "/workspace"
 
@@ -717,7 +745,8 @@ if __name__ == "__main__":
                 )
                 if result.returncode == 0:
                     return True  # Image already available locally
-            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+                print(f"Warning: Unable to check if Docker image is available locally: {e}")
                 pass  # Image not available locally, proceed with pull
 
         # Pull the latest version of the image
@@ -834,8 +863,9 @@ if __name__ == "__main__":
                     "created": container_info.get("Created", "unknown"),
                     "platform": container_info.get("Platform", "unknown"),
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to get container details: {e}")
+            logging.debug(f"Container details retrieval failed: {e}")
 
         return None
 
@@ -894,8 +924,9 @@ if __name__ == "__main__":
                         try:
                             cpu_float = float(cpu_percent)
                             stats["total_cpu_percent"] += cpu_float
-                        except ValueError:
-                            pass
+                        except ValueError as e:
+                            print(f"Warning: Invalid CPU percentage value '{cpu_percent}': {e}")
+                            logging.debug(f"CPU percentage parsing failed for '{cpu_percent}': {e}")
 
                         stats["containers"][key] = {
                             "memory_mb": mem_current,
@@ -935,8 +966,6 @@ if __name__ == "__main__":
 
     def __del__(self):
         """Cleanup when manager is destroyed."""
-        import contextlib
-
         with contextlib.suppress(Exception):
             self.cleanup_all_sessions()
 

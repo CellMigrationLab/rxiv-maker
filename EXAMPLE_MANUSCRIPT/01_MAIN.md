@@ -2,9 +2,7 @@
 <!-- note that this title is not rendered in the PDF, instead the one in the YAML metadata is used -->
 
 ## Abstract
-Preprint servers have become central to research communication, but authors still struggle with manuscript preparation and typesetting. Rxiv-Maker converts Markdown documents to publication-ready PDFs through automated LaTeX processing. Researchers can focus on content while the system handles formatting and typesetting without requiring LaTeX knowledge. 
-
-The tool supports version control and collaborative editing workflows common in modern research teams. Python and R scripts execute during compilation to generate figures directly from data, keeping visualizations synchronized with analyses. Docker containerization and automated build systems provide consistent results across different computing environments. Mathematical notation, citations, and cross-references are processed automatically during conversion. This manuscript was prepared using Rxiv-Maker.
+Preprint servers accelerate research dissemination, but authors still face complex manuscript preparation without professional typesetting support. Rxiv-Maker enables researchers to create documents using a framework that converts Markdown into publication-standard PDFs. It automatically translates the markdown text into LaTeX, so researchers don't have to write any LaTeX code themselves. This tool transforms simple documents into dynamic, version-controlled files that work well with modern team collaboration and ongoing updates. Rxiv-Maker executes Python and R scripts for on-the-fly figure generation, ensuring visualisations stay current with data and analyses. Automated build environments, Docker support, and built-in citation and cross-reference management ensure reliable, reproducible builds across systems, while the conversion process handles mathematical equations and formatting. Rxiv-Maker simplifies professional typesetting, promoting clear and open scientific publishing. This manuscript showcases Rxiv-Maker's capabilities, serving as a testament to its elegance in action.
 
 ## Main
 
@@ -12,25 +10,35 @@ The tool supports version control and collaborative editing workflows common in 
 
 Preprint servers like arXiv, bioRxiv, and medRxiv have become central to research communication [@beck2020;@levchenk2024;@Fraser2020_preprint_growth]. As submission rates climb (@sfig:arxiv_growth, @sfig:preprint_trends), researchers now handle tasks once managed by journal production teams [@Vale2015_preprints;@Tenant2016_academic_publishing]. Most manuscript preparation workflows use proprietary formats that work poorly with version control systems, making collaborative research more difficult [@lin2020].
 
-Computational research faces particular challenges because algorithms, analysis methods, and processing pipelines change frequently. In computational biology, researchers struggle to keep manuscripts synchronized with evolving analysis code, leading to publications that don't accurately describe the methods used. 
+Computational research faces particular challenges because algorithms, analysis methods, and processing pipelines change frequently. In computational biology, researchers struggle to keep manuscripts synchronised with evolving analysis code, leading to publications that don't accurately describe the methods used. 
 
-Bioimage analysis shows these problems clearly—collaborative frameworks [@biaflows2024] and containerized analysis environments [@dl4miceverywhere2024] highlight how important reproducible computational workflows are for scientific publishing.
+Bioimage analysis shows these problems clearly: collaborative frameworks [@biaflows2024] and containerised analysis environments [@dl4miceverywhere2024] highlight how important reproducible computational workflows are for scientific publishing.
 
 Rxiv-Maker helps address these challenges by providing a developer-centric framework for reproducible preprint preparation. It generates publication-standard PDFs through automated LaTeX processing and works directly with Git workflows and continuous integration practices. Built-in reproducibility features ensure manuscripts build consistently across different systems and over time.
 
 Manuscript preparation becomes a transparent process that gives researchers access to professional typesetting tools. A Visual Studio Code extension provides syntax highlighting and automated citation management. Researchers can leverage familiar development environments while maintaining rigorous version control and reproducibility guarantees. This bridges traditional authoring workflows with contemporary best practices in computational research.
 
+<!-- Example 1: Standard single-column figure positioning -->
+<!-- tex_position="t" places the figure at the top of the page (recommended default) -->
+<!-- width not specified defaults to \linewidth (full column width) -->
 ![](FIGURES/Figure__system_diagram/Figure__system_diagram.svg)
 {#fig:system_diagram tex_position="t"} **The Rxiv-Maker System Diagram.** The system integrates Markdown content, YAML metadata, Python and R scripts, and bibliography files through a processing engine. This engine leverages GitHub Actions, virtual environments, and LaTeX to produce a publication-ready scientific article, demonstrating a fully automated and reproducible pipeline.
 
+<!-- Example 2: Full-width two-column spanning figure -->
+<!-- width="\textwidth" makes the figure span both columns (use figure* environment) -->
+<!-- tex_position="t" maintains top placement preference -->  
+<!-- This combination is perfect for detailed workflow diagrams that need maximum width -->
 ![](FIGURES/Figure__workflow/Figure__workflow.svg)
 {#fig:workflow width="\textwidth" tex_position="t"} **Rxiv-Maker Workflow: User Input vs. Automated Processing.** The framework clearly separates user responsibilities (content creation and configuration) from automated processes (parsing, conversion, compilation, and output generation). Users only need to write content and set preferences. At the same time, the system handles all technical aspects of manuscript preparation automatically, ensuring a streamlined workflow from markdown input to publication-ready PDF output.
+
+<!-- For comprehensive figure positioning guidance, see docs/tutorials/figure-positioning.md -->
+<!-- This covers positioning attributes, width control, panel references, and troubleshooting -->
 
 The framework enables programmatic generation of figures and tables using Python and R scripting with visualisation libraries including Matplotlib [@Hunter2007_matplotlib] and Seaborn [@Waskom2021_seaborn]. 
 
 Figures can be generated directly from source datasets during compilation, establishing transparent connections between raw data, processing pipelines, and final visualisations. This executable manuscript approach eliminates the manual copy-and-paste workflow that traditionally introduces errors when transferring results between analysis and documentation [@perkel2022]. When datasets are updated or algorithms refined, affected figures are automatically regenerated, ensuring consistency and eliminating outdated visualisations. The system integrates Mermaid.js [@Mermaid2023_documentation] for generating technical diagrams from text-based syntax, with the complete range of supported methods detailed in @stable:figure-formats.
 
-This approach reframes manuscripts as executable outputs of the research process rather than static documentation. Built upon the HenriquesLab bioRxiv template [@HenriquesLab2015_template], Rxiv-Maker extends capabilities through automated processing pipelines. The architecture, detailed in @fig:system_diagram and @fig:workflow, provides automated build processes through GitHub Actions and virtual environments, with technical details described in @snote:figure-generation. 
+This approach reframes manuscripts as executable outputs of the research process rather than static documentation. Built upon the HenriquesLab bioRxiv template [@HenriquesLab2015_template], Rxiv-Maker extends capabilities through automated processing pipelines. The architecture, detailed in @fig:system_diagram and @fig:workflow, provides automated build processes through GitHub Actions and virtual environments (technical details described in @snote:figure-generation).
 
 Academic authors use various tools depending on their research needs and technical requirements. Traditional LaTeX environments like Overleaf democratise professional typesetting through accessible web interfaces, but struggle with version control and computational content integration. 
 
@@ -44,15 +52,15 @@ Rxiv-Maker occupies a specialised niche at the intersection of developer workflo
 
 Rxiv-Maker simplifies manuscript creation by building reproducibility directly into the writing process. Writers work in familiar Markdown, which the system converts to LaTeX and compiles into publication-ready PDFs with proper formatting, pagination, and high-quality figures.
 
-Docker containerisation addresses computational reproducibility by encapsulating the complete environment—LaTeX distributions, Python libraries, R packages, and system dependencies—within immutable container images. GitHub Actions workflows leverage pre-compiled Docker images for standardised compilation processes, reducing build times from 8-10 minutes to approximately 2 minutes. 
+Docker containerisation addresses computational reproducibility by encapsulating the complete environment (LaTeX distributions, Python libraries, R packages, and system dependencies) within immutable container images. GitHub Actions workflows leverage pre-compiled Docker images for standardised compilation processes, reducing build times from 8-10 minutes to approximately 2 minutes. 
 
 The Docker engine mode enables researchers to generate PDFs with only Docker and python as prerequisites. This is valuable for collaborative research across platforms or institutional settings with software restrictions [@Boettiger2015_docker_reproducibility].
 
 The system automatically saves all generated files, creating a complete record from source materials to the finished document. For users who want immediate feedback, we provide Google Colab notebook deployment that compiles documents in real-time while preserving reproducibility.
 
-We've also developed a Docker-based version using udocker [@gomes2018] that cuts setup time dramatically—from about 20 minutes down to 4 minutes. It runs in pre-configured containers with all dependencies already installed, eliminating manual setup and ensuring consistency between Colab sessions. Available deployment strategies are compared in @stable:deployment-options.
+For Google Colab environments that restrict privileged container execution, we provide a specialized implementation using udocker [@gomes2018] for unprivileged container deployment. This approach cuts setup time dramatically (from about 20 minutes down to 4 minutes) by running pre-configured containers with all dependencies already installed, eliminating manual setup and ensuring consistency between Colab sessions. For standard development environments, Docker and Podman provide native containerization. Available deployment strategies are compared in @stable:deployment-options.
 
-When working with figures, the system handles both static images and dynamic content. Drop Python or R scripts into designated folders, and Rxiv-Maker will execute them during compilation, pulling in data, running analyses, and generating visualizations that appear in the final PDF [@Jupyter2016_notebook]. It even renders Mermaid.js diagrams from markdown into crisp SVG images. This approach makes manuscripts complete, verifiable records of research—readers can trace every figure and result back to its source code and data.
+When working with figures, the system handles both static images and dynamic content. Drop Python or R scripts into designated folders, and Rxiv-Maker will execute them during compilation, pulling in data, running analyses, and generating visualisations that appear in the final PDF [@Jupyter2016_notebook]. It even renders Mermaid.js diagrams from markdown into crisp SVG images. This approach makes manuscripts complete, verifiable records of research where readers can trace every figure and result back to its source code and data.
 
 The Visual Studio Code extension provides editing features including real-time syntax highlighting, autocompletion for bibliographic citations from BibTeX files, and cross-reference management. The extension reduces cognitive load and minimises syntax errors while maintaining consistent formatting.
 
@@ -88,7 +96,7 @@ These numbered equations (@eq:einstein, @eq:std_dev, and @eq:equilibrium) demons
 
 Rxiv-Maker is optimised for reproducible PDF preprint generation within the scientific authoring ecosystem. While platforms such as Overleaf and Quarto offer multi-format capabilities, Rxiv-Maker provides focused, developer-centric workflows that integrate with version control and automated build environments.
 
-The framework provides practical training in version control, automated workflows, and computational reproducibility—skills fundamental to modern scientific practice. Researchers learn technical skills including Git proficiency, markdown authoring, continuous integration, and containerised environments. The system is designed to be accessible without extensive programming backgrounds, featuring comprehensive documentation and intuitive workflows that reduce barriers and foster skill development.
+The framework provides practical training in version control, automated workflows, and computational reproducibility, which are skills fundamental to modern scientific practice. Researchers learn technical skills including Git proficiency, markdown authoring, continuous integration, and containerised environments. The system is designed to be accessible without extensive programming backgrounds, featuring comprehensive documentation and intuitive workflows that reduce barriers and foster skill development.
 
 The technical architecture addresses computational constraints of cloud-based build systems through intelligent caching and selective content regeneration. The framework supports high-resolution graphics and advanced figure layouts while maintaining optimal document organisation and cross-referencing functionality.
 

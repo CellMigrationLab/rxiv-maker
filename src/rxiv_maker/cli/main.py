@@ -42,7 +42,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Workflow Commands",
-            "commands": ["arxiv", "track-changes", "setup", "install-deps"],
+            "commands": ["arxiv", "track-changes", "setup"],
         },
         {
             "name": "Configuration",
@@ -140,15 +140,32 @@ class UpdateCheckGroup(click.Group):
         finally:
             # Clean up container sessions if container engine was used
             engine = ctx.obj.get("engine") if ctx.obj else None
+            verbose = ctx.obj.get("verbose", False) if ctx.obj else False
+
             if engine in ["docker", "podman"]:
                 try:
                     # Use the new unified cleanup system for all container engines
+                    import logging
+
                     from ..engines.factory import ContainerEngineFactory
 
-                    ContainerEngineFactory.manual_cleanup()
-                except Exception:
-                    # Ignore cleanup errors to avoid masking original exceptions
-                    pass
+                    if verbose:
+                        console.print("🧹 Cleaning up container sessions...", style="dim")
+
+                    cleanup_count = ContainerEngineFactory.cleanup_all_engines()
+
+                    if verbose and cleanup_count > 0:
+                        console.print(f"✅ Cleaned up {cleanup_count} container engine(s)", style="dim green")
+                    elif verbose:
+                        console.print("ℹ️  No active container sessions to clean up", style="dim")
+
+                except Exception as e:
+                    # Log cleanup errors but don't mask original exceptions
+                    logger = logging.getLogger(__name__)
+                    logger.debug(f"Container cleanup failed: {e}")
+
+                    if verbose:
+                        console.print(f"⚠️  Container cleanup failed: {e}", style="dim yellow")
 
 
 @click.group(cls=UpdateCheckGroup, context_settings={"help_option_names": ["-h", "--help"]})
@@ -203,9 +220,9 @@ def main(
 
     **Install system dependencies:**
 
-        $ rxiv install-deps             # Install LaTeX, Node.js, R, etc.
+        $ rxiv setup                     # Full setup including system and Python dependencies
 
-        $ rxiv install-deps --mode=minimal  # Install only essential dependencies
+        $ rxiv setup --mode minimal     # Install only essential dependencies
 
     **Enable shell completion:**
 
@@ -267,7 +284,7 @@ main.add_command(commands.init)
 main.add_command(commands.bibliography)
 main.add_command(commands.track_changes)
 main.add_command(commands.setup)
-main.add_command(commands.install_deps, name="install-deps")
+# Deprecated: install-deps command removed (use 'rxiv setup' instead)
 main.add_command(commands.version)
 main.add_command(config_cmd, name="config")
 main.add_command(check_installation, name="check-installation")

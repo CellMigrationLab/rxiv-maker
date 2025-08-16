@@ -159,6 +159,8 @@ class ConfigManager:
         # Load existing config or start with default
         if config_path.exists():
             current_config = self._load_config_file(config_path)
+            if current_config is None:
+                current_config = self._get_config_template("default")
         else:
             current_config = self._get_config_template("default")
 
@@ -215,7 +217,7 @@ class ConfigManager:
         """
         # Convert dot notation to nested dict update
         keys = key.split(".")
-        updates = {}
+        updates: Dict[str, Any] = {}
         current = updates
 
         for k in keys[:-1]:
@@ -281,7 +283,8 @@ class ConfigManager:
             # Load only non-default configuration
             config_file = self._find_existing_config()
             if config_file:
-                config = self._load_config_file(config_file)
+                loaded_config = self._load_config_file(config_file)
+                config = loaded_config if loaded_config is not None else {}
             else:
                 config = {}
 
@@ -338,7 +341,7 @@ class ConfigManager:
             "validation": {"enabled": True, "strict": False, "skip_doi_check": False},
             "figures": {"directory": "FIGURES", "generate": True, "formats": ["png", "svg"]},
             "bibliography": {"file": "03_REFERENCES.bib", "style": "nature"},
-            "cache": {"enabled": True, "ttl_hours": 24, "directory": ".rxiv_cache"},
+            "cache": {"enabled": True, "ttl_hours": 24, "directory": None},
             "version": "1.0",
             "acknowledge_rxiv_maker": True,
         }
@@ -418,6 +421,7 @@ class ConfigManager:
             "RXIV_ENGINE_TYPE": ("engine", "type"),
             "RXIV_OUTPUT_DIR": ("output", "directory"),
             "RXIV_CACHE_ENABLED": ("cache", "enabled"),
+            "RXIV_CACHE_DIR": ("cache", "directory"),
             "RXIV_VALIDATION_STRICT": ("validation", "strict"),
             "MANUSCRIPT_PATH": ("manuscript", "path"),
         }

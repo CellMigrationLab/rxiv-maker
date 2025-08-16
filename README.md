@@ -15,7 +15,7 @@ Rxiv-Maker enhances the capabilities of traditional scientific writing by ensuri
 ## Key Features
 
 - **20+ Enhanced Markdown Features** - Scientific cross-references, citations, subscript/superscript (**rxiv-markdown**)
-- **Automated Figure Generation** - Python/R scripts and Mermaid diagrams with smart caching
+- **Automated Figure Generation** - Python/R scripts and Mermaid diagrams with smart caching and advanced positioning control
 - **Intelligent Validation** - Pre-build error detection with actionable feedback
 - **Professional Output** - LaTeX-quality PDFs with various citation styles
 - **Multi-Environment** - Local, Docker, Google Colab, and GitHub Actions support
@@ -23,7 +23,7 @@ Rxiv-Maker enhances the capabilities of traditional scientific writing by ensuri
 - **VS Code Integration** - Dedicated extension with syntax highlighting
 - **Modern CLI** - Beautiful command-line interface with rich output and auto-completion
 
-**Key rxiv-markdown features:** Scientific cross-references (`@fig:label`, `@eq:label`), citations (`@citation`), text formatting (`~subscript~`, `^superscript^`), document control (`<newpage>`), and automated figure generation.
+**Key rxiv-markdown features:** Scientific cross-references (`@fig:label`, `@eq:label`), citations (`@citation`), text formatting (`~subscript~`, `^superscript^`), document control (`<newpage>`), automated figure generation, and precise figure positioning (`tex_position="t"`, `width="\textwidth"`).
 
 ## Key Benefits
 
@@ -77,11 +77,9 @@ rich>=13.0.0         # Beautiful terminal output
 
 </details>
 
-## Quickstart
+## 🚀 Quickstart
 
-### 🚀 Modern CLI (Recommended)
-
-**📦 Universal Install (Recommended)**
+### 📦 Universal Install (Recommended)
 ```bash
 # One command installs everything
 pip install rxiv-maker
@@ -99,7 +97,53 @@ rxiv pdf MY_PAPER/
 rxiv completion zsh              # Install for zsh, bash, or fish
 ```
 
-**🎛️ Installation Options**
+### 📋 Alternative Setup Options
+
+**🌐 Google Colab** (Easiest - no installation)
+- **Prerequisites**: Google account only | **Setup Time**: 2 minutes
+- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HenriquesLab/rxiv-maker/blob/main/notebooks/rxiv_maker_colab.ipynb)
+
+**🐳 Docker** (Minimal dependencies)
+- **Prerequisites**: [Docker Desktop](https://www.docker.com/products/docker-desktop) + Make | **Setup Time**: 3-5 minutes
+```bash
+git clone https://github.com/henriqueslab/rxiv-maker.git
+cd rxiv-maker
+make pdf RXIV_ENGINE=DOCKER
+```
+
+**🏠 Local Development** (Full control)
+- **Prerequisites**: Python 3.11+, LaTeX, Make ([platform guide](docs/getting-started/installation.md)) | **Setup Time**: 10-30 minutes
+```bash
+git clone https://github.com/henriqueslab/rxiv-maker.git
+cd rxiv-maker
+pip install -e .                    # Install with modern CLI
+rxiv pdf                            # Generate PDF using CLI
+```
+
+### 🛠️ Installation Options
+
+**🐧 APT Repository (Ubuntu/Debian)**
+```bash
+# Add GPG key and repository
+curl -fsSL https://raw.githubusercontent.com/henriqueslab/rxiv-maker/apt-repo/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/rxiv-maker.gpg
+echo "deb [arch=amd64] https://raw.githubusercontent.com/henriqueslab/rxiv-maker/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/rxiv-maker.list
+
+# Install with system dependencies
+sudo apt update && sudo apt install rxiv-maker
+```
+
+📋 **Installation Guide**: [Complete APT installation guide](docs/getting-started/apt-repository-guide.md) | **Container Testing**: [Multi-distribution testing](docs/testing/apt-container-testing.md)
+
+**🍺 Homebrew (macOS/Linux)**
+```bash
+# One-time tap setup
+brew tap henriqueslab/rxiv-maker
+
+# Install with dependencies
+brew install rxiv-maker
+```
+
+**🐍 PyPI (Cross-platform)**
 ```bash
 # Full installation (default)
 pip install rxiv-maker
@@ -111,52 +155,16 @@ RXIV_INSTALL_MODE=minimal pip install rxiv-maker
 RXIV_SKIP_SYSTEM_DEPS=1 pip install rxiv-maker
 ```
 
-### 📋 Alternative Setup Options
-
-**🌐 Google Colab** (Easiest - no installation)
-- **Prerequisites**: Google account only
-- **Setup Time**: 2 minutes
-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HenriquesLab/rxiv-maker/blob/main/notebooks/rxiv_maker_colab.ipynb)
-
-**🐳 Docker** (Minimal dependencies)
-- **Prerequisites**: [Docker Desktop](https://www.docker.com/products/docker-desktop) + Make
-- **Setup Time**: 3-5 minutes
-```bash
-git clone https://github.com/henriqueslab/rxiv-maker.git
-cd rxiv-maker
-make pdf RXIV_ENGINE=DOCKER
-```
-
-**🏠 Local Development** (Full control)
-- **Prerequisites**: Python 3.11+, LaTeX, Make ([platform guide](docs/getting-started/installation.md))
-- **Setup Time**: 10-30 minutes
-```bash
-git clone https://github.com/henriqueslab/rxiv-maker.git
-cd rxiv-maker
-pip install -e .                    # Install with modern CLI
-rxiv pdf                            # Generate PDF using CLI
-```
-
-**🛠️ Legacy Make Interface** (Still supported)
-```bash
-git clone https://github.com/henriqueslab/rxiv-maker.git
-cd rxiv-maker
-make setup && make pdf
-```
-
 ## Modern CLI Usage
 
 Rxiv-Maker includes a modern command-line interface with rich output and intuitive commands:
 
-### Quick Start
+### Essential Commands
 ```bash
-# Install from PyPI
-pip install rxiv-maker
-
-# Initialize new manuscript
+# Create new manuscript
 rxiv init MY_PAPER/
 
-# Build PDF
+# Generate PDF
 rxiv pdf MY_PAPER/
 
 # Validate manuscript
@@ -364,6 +372,9 @@ Existing users can continue using Make commands or migrate to the CLI:
 - **[Google Colab Tutorial](docs/tutorials/google_colab.md)** - Browser-based PDF generation
 - **[GitHub Actions Guide](docs/workflows/github-actions.md)** - Automated cloud builds
 
+### Tutorials
+- **[Figure Positioning Guide](docs/tutorials/figure-positioning.md)** - Complete guide to figure placement, sizing, and positioning
+
 ### Advanced Features
 - **[Change Tracking](docs/workflows/change-tracking.md)** - Version diff PDFs
 - **[Troubleshooting](docs/troubleshooting/troubleshooting-missing-figures.md)** - Common issues and fixes
@@ -372,6 +383,10 @@ Existing users can continue using Make commands or migrate to the CLI:
 ### Development
 - **[VS Code Extension](https://github.com/HenriquesLab/vscode-rxiv-maker)** - Enhanced editing experience
 - **[API Documentation](docs/api/)** - Code reference
+
+### Reference
+- **[Rxiv-Markdown Syntax Guide](docs/reference/rxiv-markdown-syntax.md)** - Complete syntax reference for scientific writing
+- **[Command Reference](docs/CLI_REFERENCE.md)** - Complete CLI command documentation
 
 </details>
 
@@ -388,6 +403,7 @@ make setup                            # Install dependencies
 
 ### Quick Help
 - **Issues?** Check [Troubleshooting Guide](docs/troubleshooting/troubleshooting-missing-figures.md)
+- **Figure positioning problems?** See [Figure Positioning Guide](docs/tutorials/figure-positioning.md)
 - **Platform problems?** See [Installation Guide](docs/getting-started/installation.md) 
 - **Need help?** Visit [GitHub Discussions](https://github.com/henriqueslab/rxiv-maker/discussions)
 
@@ -460,6 +476,59 @@ make pdf RXIV_ENGINE=DOCKER
 - **Multi-platform**: AMD64 support with ARM64 compatibility via Rosetta
 
 For detailed Docker documentation, see the [Docker infrastructure directory](src/docker/) and [Docker Engine Mode Guide](docs/workflows/docker-engine-mode.md).
+
+## 🧪 Testing & Validation
+
+Rxiv-Maker includes comprehensive testing infrastructure to ensure reliability across different environments and distributions.
+
+### Container-Based Testing
+
+**Multi-Distribution Validation**: Automated testing across Ubuntu 20.04, 22.04, and 24.04 using Podman containers.
+
+```bash
+# Quick validation test
+./scripts/test-apt-container.sh --ubuntu-version 22.04 --test-type quick
+
+# Comprehensive multi-container testing
+./scripts/run-container-tests.sh --ubuntu-versions "20.04,22.04,24.04" --test-types "installation,functionality"
+
+# APT repository validation
+./scripts/validate-apt-repo.sh --verbose
+```
+
+**Test Types Available**:
+- `quick` - Fast validation (installation + version check)
+- `installation` - Full package installation testing  
+- `functionality` - Comprehensive manuscript operations
+- `security` - GPG signatures and security validation
+- `performance` - Installation and runtime benchmarks
+- `comprehensive` - All tests combined
+
+### Integration Testing
+
+Python-based integration tests with container orchestration:
+
+```bash
+# Run integration test suite
+python -m pytest tests/integration/test_apt_container_workflow.py -v --ubuntu-version 22.04
+
+# Direct execution with custom parameters
+python tests/integration/test_apt_container_workflow.py --ubuntu-version 22.04 --verbose
+```
+
+### Repository Validation
+
+Validate APT repository integrity and accessibility:
+
+```bash
+# Validate repository structure and signatures
+./scripts/validate-apt-repo.sh --repo-url "https://henriqueslab.github.io/rxiv-maker/"
+
+# Check package integrity and metadata
+./scripts/validate-apt-repo.sh --verbose --output validation-results/
+```
+
+📚 **Documentation**: [Container Testing Guide](docs/testing/apt-container-testing.md) | [Workflow Integration](docs/workflows/container-apt-testing.md)
 
 ## Contributing
 

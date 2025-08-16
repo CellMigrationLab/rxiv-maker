@@ -4,11 +4,15 @@ This module provides cross-platform utilities for detecting the operating system
 and handling platform-specific operations like path management and command execution.
 """
 
+import logging
 import os
 import platform
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class PlatformDetector:
@@ -100,9 +104,14 @@ class PlatformDetector:
 
     def get_venv_python_path(self) -> str | None:
         """Get the virtual environment Python path."""
-        venv_dir = Path(".venv")
-        if not venv_dir.exists():
-            return None
+        # Check VIRTUAL_ENV first, then local .venv
+        venv_path = os.getenv("VIRTUAL_ENV")
+        if venv_path:
+            venv_dir = Path(venv_path)
+        else:
+            venv_dir = Path(".venv")
+            if not venv_dir.exists():
+                return None
 
         if self.is_windows():
             python_path = venv_dir / "Scripts" / "python.exe"
@@ -113,9 +122,14 @@ class PlatformDetector:
 
     def get_venv_activate_path(self) -> str | None:
         """Get the virtual environment activation script path."""
-        venv_dir = Path(".venv")
-        if not venv_dir.exists():
-            return None
+        # Check VIRTUAL_ENV first, then local .venv
+        venv_path = os.getenv("VIRTUAL_ENV")
+        if venv_path:
+            venv_dir = Path(venv_path)
+        else:
+            venv_dir = Path(".venv")
+            if not venv_dir.exists():
+                return None
 
         if self.is_windows():
             activate_path = venv_dir / "Scripts" / "activate"
@@ -123,6 +137,15 @@ class PlatformDetector:
             activate_path = venv_dir / "bin" / "activate"
 
         return str(activate_path) if activate_path.exists() else None
+
+    def is_in_venv(self) -> bool:
+        """Check if running in a virtual environment."""
+        return (
+            os.getenv("VIRTUAL_ENV") is not None
+            or os.getenv("VENV") is not None
+            or hasattr(sys, "real_prefix")
+            or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
+        )
 
     def is_in_conda_env(self) -> bool:
         """Check if running in a conda/mamba environment."""
@@ -183,14 +206,15 @@ class PlatformDetector:
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
             return False
 
-    def run_command(self, cmd: str, shell: bool = True, **kwargs) -> subprocess.CompletedProcess:
-        """Run a command with platform-appropriate settings."""
-        if self.is_windows():
-            # On Windows, use cmd.exe for better compatibility
-            return subprocess.run(cmd, shell=shell, **kwargs)
-        else:
-            # On Unix-like systems, use bash if available
-            return subprocess.run(cmd, shell=shell, **kwargs)
+    def run_command(self, cmd: str | list[str], shell: bool = False, **kwargs) -> subprocess.CompletedProcess:
+        """Run a command with platform-appropriate settings.
+
+        Args:
+            cmd: Command to run - use list format for security, string only when shell=True
+            shell: Whether to use shell (default: False for security)
+            **kwargs: Additional arguments to pass to subprocess.run
+        """
+        return subprocess.run(cmd, shell=shell, **kwargs)
 
     def check_command_exists(self, command: str) -> bool:
         """Check if a command exists on the system."""
@@ -209,8 +233,8 @@ class PlatformDetector:
                     if line and not line.startswith("#") and "=" in line:
                         key, value = line.split("=", 1)
                         env_vars[key.strip()] = value.strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to read conda environment file {env_file}: {e}")
 
         return env_vars
 
@@ -218,15 +242,71 @@ class PlatformDetector:
         """Install uv package manager for the current platform."""
         try:
             if self.is_windows():
-                # Use PowerShell on Windows
-                cmd = 'powershell -Command "irm https://astral.sh/uv/install.ps1 | iex"'
-            else:
-                # Use curl on Unix-like systems
-                cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+                # Use PowerShell on Windows - download and execute separately for security
+                import os
+                import tempfile
 
-            result = self.run_command(cmd, capture_output=True, text=True)
-            return result.returncode == 0
-        except Exception:
+                # Download script to temporary file first, then execute
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".ps1", delete=False) as f:
+                    # Download the install script
+                    download_result = self.run_command(
+                        ["powershell", "-Command", "Invoke-RestMethod https://astral.sh/uv/install.ps1"],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if download_result.returncode != 0:
+                        return False
+
+                    f.write(download_result.stdout)
+                    temp_script = f.name
+
+                try:
+                    # Execute the downloaded script
+                    result = self.run_command(
+                        ["powershell", "-ExecutionPolicy", "Bypass", "-File", temp_script],
+                        capture_output=True,
+                        text=True,
+                    )
+                    return result.returncode == 0
+                finally:
+                    # Clean up temporary script
+                    try:
+                        os.unlink(temp_script)
+                    except OSError as e:
+                        logger.debug(f"Failed to clean up temporary script {temp_script}: {e}")
+            else:
+                # Use curl and sh on Unix-like systems with secure argument list
+                import os
+                import tempfile
+
+                # Download script to temporary file first, then execute
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as f:
+                    # Download the install script
+                    download_result = self.run_command(
+                        ["curl", "-LsSf", "https://astral.sh/uv/install.sh"], capture_output=True, text=True
+                    )
+                    if download_result.returncode != 0:
+                        return False
+
+                    f.write(download_result.stdout)
+                    temp_script = f.name
+
+                try:
+                    # Make script executable and run it
+                    os.chmod(temp_script, 0o755)
+                    result = self.run_command(["sh", temp_script], capture_output=True, text=True)
+                    return result.returncode == 0
+                finally:
+                    # Clean up temporary script
+                    try:
+                        os.unlink(temp_script)
+                    except OSError as e:
+                        logger.debug(f"Failed to clean up temporary script {temp_script}: {e}")
+
+                return False
+        except Exception as e:
+            # Log uv installation failure for debugging platform issues
+            logger.debug(f"Failed to install uv package manager: {e}")
             return False
 
     def remove_directory(self, path: Path) -> bool:
@@ -236,7 +316,9 @@ class PlatformDetector:
                 shutil.rmtree(path)
                 return True
             return False
-        except Exception:
+        except Exception as e:
+            # Log directory removal failure for debugging
+            logger.debug(f"Failed to remove directory {path}: {e}")
             return False
 
     def copy_file(self, src: Path, dst: Path) -> bool:
@@ -245,7 +327,9 @@ class PlatformDetector:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             return True
-        except Exception:
+        except Exception as e:
+            # Log file copy failure for debugging
+            logger.debug(f"Failed to copy file from {src} to {dst}: {e}")
             return False
 
     def make_executable(self, path: Path) -> bool:
@@ -259,7 +343,9 @@ class PlatformDetector:
             current_mode = path.stat().st_mode
             path.chmod(current_mode | stat.S_IEXEC)
             return True
-        except Exception:
+        except Exception as e:
+            # Log file permission change failure for debugging
+            logger.debug(f"Failed to make file executable {path}: {e}")
             return False
 
 
@@ -292,9 +378,14 @@ def is_unix_like() -> bool:
     return platform_detector.is_unix_like()
 
 
-def run_platform_command(cmd: str, **kwargs) -> subprocess.CompletedProcess:
+def run_platform_command(cmd: str | list[str], **kwargs) -> subprocess.CompletedProcess:
     """Run a command with platform-appropriate settings."""
     return platform_detector.run_command(cmd, **kwargs)
+
+
+def is_in_venv() -> bool:
+    """Check if running in a virtual environment."""
+    return platform_detector.is_in_venv()
 
 
 def is_in_conda_env() -> bool:
